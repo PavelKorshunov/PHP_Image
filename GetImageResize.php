@@ -22,7 +22,7 @@ class GetImageResize
         $this->dump(getimagesize($img));
     }
     
-    protected function resizeImgExact ($width, $height, $oldWidth, $oldHeight)
+    protected function resizeImgExact ($width, $height, $oldWidth, $oldHeight, $constResize = 1)
     {
         // Определяем отображаемую область
 
@@ -30,20 +30,27 @@ class GetImageResize
         {
             $this->lCroppedImageWidth = floor($oldWidth);
             $this->lCroppedImageHeight = floor($oldWidth * $height / $width);
-            $this->lInitialImageCroppingY = floor(($oldHeight - $this->lCroppedImageHeight) / 2);
+            if($constResize == 1)
+            {
+                $this->lInitialImageCroppingY = floor(($oldHeight - $this->lCroppedImageHeight) / 2);
+            }
         } else {
             $this->lCroppedImageWidth = floor($oldHeight * $width / $height);
             $this->lCroppedImageHeight = floor($oldHeight);
-            $this->lInitialImageCroppingX = floor(($oldWidth - $this->lCroppedImageWidth) / 2);
+            if($constResize == 1)
+            {
+                $this->lInitialImageCroppingX = floor(($oldWidth - $this->lCroppedImageWidth) / 2);
+            }
         }
     }
+
     /**
     * @param string $image - строка, представляющая путь до обрезаемого изображения
     * @param string $filePath - строка, представляющая путь к новому обрезанному изображению
     * @param array $arSize - массив с длиной и шириной обрезаемого изображения
     * @param array $constResize - константа отвечающая за тип масштабирования, 1 - resizeImgExact
     */
-    public function resizeCenter ($image, $filePath, $arSize, $constResize = 1) 
+    public function resizeCenter ($image, $filePath, $arSize, $constResize = 1, $quality = 75)
     {
         $width = $arSize["width"];
         $height = $arSize["height"];
@@ -66,8 +73,14 @@ class GetImageResize
         
         if($constResize == 1)
         {
-            $this->resizeImgExact($width, $height, $oldWidth, $oldHeight);
-        } else {
+            $this->resizeImgExact($width, $height, $oldWidth, $oldHeight, $constResize);
+        }
+        elseif($constResize == 2) //режем изображение от левого верхнего угла
+        {
+            $this->resizeImgExact($width, $height, $oldWidth, $oldHeight, $constResize);
+        }
+        else
+        {
             throw new Exception('Такой константы не существует');
         }
         
@@ -79,6 +92,9 @@ class GetImageResize
         // сохраняем полученное изображение в указанный файл
         // Для сжатия изображения необходимо третьим параметром установить размер,
         // Если png от 0 до 9, если jpeg от 0 до 100
+        if($ImageExtension == 'jpeg') {
+            return $func($NewImageDescriptor, $filePath, $quality);
+        }
         return $func($NewImageDescriptor, $filePath);
     }
 //    public function resizeCoord ($image, $size, $coord)
@@ -90,6 +106,6 @@ class GetImageResize
 // Применение
 $newImg = $_SERVER['DOCUMENT_ROOT'] . "/img/newImg.jpg";
 $call = new GetImageResize();
-$call->resizeCenter('http://temp.loc/img/test.jpg', $newImg, ["width" => 800, "height" => 600], 1);
+$call->resizeCenter('http://temp.loc/img/test.jpg', $newImg, ["width" => 800, "height" => 600], 1, 75);
+//$call->dumpImg('http://temp.loc/img/test.jpg');
 //вывод в браузер <img src="/img/newImg.jpg">
-
